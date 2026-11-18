@@ -1,3 +1,11 @@
+# dados e artefatos pesados
 data/raw/
+data/processed/
+data/ground_truth/*/
 checkpoints/
 predictions/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
