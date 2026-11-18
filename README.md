@@ -100,7 +100,9 @@ A lista final de pré e pós-processamentos e o tamanho do dataset usado depende
 - [x] Ground Truth (versão 1)
 - [x] Pipeline de dados (`data_loader.py`)
 - [ ] Definições do professor (dataset e pré-processamentos)
-- [ ] `metrics.py`, `training.py` e U-Net (Experimento 1)
-- [ ] Pré e pós-processamentos
-- [ ] SegFormer e Mask2Former
-- [ ] Experimentos 2 a 4, análise comparativa e relatório
+- [ ] `metrics.py` e `training.py` (compartilhados pelas três arquiteturas)
+- [ ] Implementar U-Net, SegFormer e Mask2Former
+- [ ] Experimento 1 (baseline) nas três arquiteturas
+- [ ] Pré e pós-processamentos (compartilhados)
+- [ ] Experimentos 2 a 4 nas três arquiteturas
+- [ ] Análise comparativa e relatório
