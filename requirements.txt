@@ -1,0 +1,9 @@
+# Dependências do projeto active_matter.
+# ATENÇÃO: o PyTorch (torch) NÃO está listado aqui de propósito.
+# Instale-o ANTES, escolhendo a versão certa para o seu computador (CPU ou GPU NVIDIA).
+# Veja a seção "Guia de instalação e execução" do README.md.
+
+numpy>=1.24
+h5py>=3.8
+matplotlib>=3.7
+the_well
