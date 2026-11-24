@@ -4,6 +4,7 @@ data/processed/
 data/ground_truth/*/
 checkpoints/
 predictions/
+data/tmp_download/
 
 # Python
 __pycache__/
