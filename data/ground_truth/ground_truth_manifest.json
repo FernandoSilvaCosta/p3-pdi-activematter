@@ -1,0 +1,29 @@
+{
+  "version": "v2_128px",
+  "created": "2026-11-24T00:31:44",
+  "criterion": "mask = (c - 1) > k * std_frame(c - 1), c = concentração reduzida para 128 px",
+  "k": 1.0,
+  "sigma_floor": 1e-05,
+  "per_split": {
+    "valid": {
+      "n_files": 16,
+      "n_trajectories": 24,
+      "n_frames": 648,
+      "n_valid_frames": 629,
+      "n_excluded_frames": 19,
+      "pos_frac_mean_valid": 0.1715,
+      "positive_pixels_valid_frames": 1770952,
+      "resolution_check_vs_256_nearest": {
+        "frames_compared": 629,
+        "iou_mean": 0.9547,
+        "iou_p5": 0.9101,
+        "iou_min": 0.864,
+        "dice_mean": 0.9767,
+        "pixel_agreement_mean": 0.9922,
+        "sigma_ratio_median": 0.9994,
+        "valid_flag_mismatches": 0,
+        "frames_total_checked": 648
+      }
+    }
+  }
+}
