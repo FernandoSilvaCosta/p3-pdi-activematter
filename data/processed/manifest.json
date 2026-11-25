@@ -1,0 +1,60 @@
+{
+  "dataset": "active_matter (The Well)",
+  "repo_id": "polymathic-ai/active_matter",
+  "created": "2026-11-24T22:34:34",
+  "selection": {
+    "trajectories": "todas as trajetórias de cada arquivo",
+    "frames": "1 a cada 3: t = 0, 3, 6, ... (ao longo de todo o tempo)",
+    "method": "determinístico (seed não se aplica)",
+    "splits": "oficiais do The Well (train/valid/test)"
+  },
+  "reduction": {
+    "target_max_dim": 128,
+    "method": "média de blocos (antialiasing), sem upscaling",
+    "masks": "Ground Truth será gerado a partir da concentração já reduzida"
+  },
+  "channels": [
+    "vel_x",
+    "vel_y",
+    "D_xx",
+    "D_xy",
+    "D_yx",
+    "D_yy",
+    "E_xx",
+    "E_xy",
+    "E_yx",
+    "E_yy"
+  ],
+  "budget": {
+    "target_gb": 25.0,
+    "subset_orig_equiv_gb": 18.37,
+    "within_budget": true
+  },
+  "per_split": {
+    "train": {
+      "n_files": 45,
+      "n_trajectories": 175,
+      "n_frames": 4725,
+      "orig_equiv_gb": 14.174,
+      "processed_gb": 3.408
+    },
+    "valid": {
+      "n_files": 16,
+      "n_trajectories": 24,
+      "n_frames": 648,
+      "orig_equiv_gb": 1.869,
+      "processed_gb": 0.467
+    },
+    "test": {
+      "n_files": 21,
+      "n_trajectories": 26,
+      "n_frames": 702,
+      "orig_equiv_gb": 2.329,
+      "processed_gb": 0.506
+    }
+  },
+  "software": {
+    "numpy": "2.2.6",
+    "h5py": "3.16.0"
+  }
+}

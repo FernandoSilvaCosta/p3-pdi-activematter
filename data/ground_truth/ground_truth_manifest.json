@@ -1,6 +1,6 @@
 {
   "version": "v2_128px",
-  "created": "2026-11-24T00:31:44",
+  "created": "2026-11-24T22:35:28",
   "criterion": "mask = (c - 1) > k * std_frame(c - 1), c = concentração reduzida para 128 px",
   "k": 1.0,
   "sigma_floor": 1e-05,
@@ -24,6 +24,24 @@
         "valid_flag_mismatches": 0,
         "frames_total_checked": 648
       }
+    },
+    "test": {
+      "n_files": 21,
+      "n_trajectories": 26,
+      "n_frames": 702,
+      "n_valid_frames": 683,
+      "n_excluded_frames": 19,
+      "pos_frac_mean_valid": 0.1727,
+      "positive_pixels_valid_frames": 1934766
+    },
+    "train": {
+      "n_files": 45,
+      "n_trajectories": 175,
+      "n_frames": 4725,
+      "n_valid_frames": 4583,
+      "n_excluded_frames": 142,
+      "pos_frac_mean_valid": 0.1765,
+      "positive_pixels_valid_frames": 13288907
     }
   }
 }
