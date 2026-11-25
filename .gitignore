@@ -8,9 +8,10 @@ data/tmp_download/
 results/_smoke/
 checkpoints/_smoke/
 predictions/_smoke/
-
+data/processed.tar
 # Python
 __pycache__/
 *.pyc
 .venv/
 data/channel_stats_valid.json
+*.tar
