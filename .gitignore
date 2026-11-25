@@ -5,6 +5,9 @@ data/ground_truth/*/
 checkpoints/
 predictions/
 data/tmp_download/
+results/_smoke/
+checkpoints/_smoke/
+predictions/_smoke/
 
 # Python
 __pycache__/
