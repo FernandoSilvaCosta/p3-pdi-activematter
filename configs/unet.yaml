@@ -1,0 +1,11 @@
+# U-Net (CNN) treinada do zero. Valores iniciais; o lr pode ser ajustado na validação (poucas épocas).
+arch: unet
+model:
+  base: 32          # canais da primeira camada (32, 64, 128, 256, 512)
+  depth: 4
+train:
+  lr: 1.0e-3
+  batch_size: 16
+  weight_decay: 1.0e-4
+  amp: true
+  grad_clip: 1.0
