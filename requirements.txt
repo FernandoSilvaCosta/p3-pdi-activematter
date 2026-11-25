@@ -8,3 +8,5 @@ h5py>=3.8
 matplotlib>=3.7
 the_well
 huggingface_hub
+scipy
+PyWavelets

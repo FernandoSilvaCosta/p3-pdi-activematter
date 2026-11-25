@@ -41,6 +41,7 @@ class ActiveMatterSeg(Dataset):
         include_concentration=True acrescenta um 11o canal (c - 1), apenas para o experimento
         complementar de referência (Alternativa A). O experimento principal usa False.
         """
+        self._hp, self._hg = {}, {}          # handles abertos por processo/worker (definidos primeiro: __del__ seguro)
         self.split = split
         self.proc_dir = Path(processed_root) / split
         self.gt_dir = Path(gt_root) / split
@@ -76,7 +77,6 @@ class ActiveMatterSeg(Dataset):
         t0 = self.time_index[0]
         self.time_step = int(t0[1] - t0[0]) if len(t0) > 1 else 1
         self.n_channels = 10 + (1 if include_concentration else 0)
-        self._hp, self._hg = {}, {}          # handles abertos por processo/worker
 
     def _handles(self, fi):
         if fi not in self._hp:
