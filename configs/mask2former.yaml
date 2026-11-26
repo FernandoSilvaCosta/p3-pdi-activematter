@@ -1,13 +1,16 @@
 # Mask2Former com backbone Swin-T (pesos do ImageNet). Use pretrained: null para treinar do zero.
-# amp começa desligado por estabilidade (operações de atenção deformável); testar ligá-lo no Colab.
+# Versão enxuta para o orçamento do Colab T4: decodificador Transformer com 3 camadas (decoder_layers: 4),
+# 37,9 M de parâmetros (o backbone Swin-T sozinho tem ~27,5 M). Benchmark na T4: ~1,6 min por época.
+# Precisão mista ligada (perda finita e decrescente no benchmark); se aparecer perda não finita, rodar com --no-amp.
 arch: mask2former
 model:
   pretrained: microsoft/swin-tiny-patch4-window7-224
   num_queries: 20
   drop_path_rate: 0.1
+  decoder_layers: 4
 train:
   lr: 1.0e-4
-  batch_size: 8
+  batch_size: 16
   weight_decay: 1.0e-4
-  amp: false
+  amp: true
   grad_clip: 1.0

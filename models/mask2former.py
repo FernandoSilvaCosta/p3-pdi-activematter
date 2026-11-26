@@ -39,7 +39,11 @@ class Mask2Former(nn.Module):
     def __init__(self, in_channels=10, num_queries=20, pretrained="microsoft/swin-tiny-patch4-window7-224",
                  drop_path_rate=0.1, **config_kwargs):
         """config_kwargs vão para o Mask2FormerConfig (ex.: decoder_layers=4, encoder_layers=2,
-        dim_feedforward=1024, use_auxiliary_loss=False, train_num_points=4096) e permitem versões mais leves."""
+        dim_feedforward=1024, train_num_points=4096) e permitem versões mais leves.
+        Obs.: use_auxiliary_loss=False NÃO é suportado pelo transformers 5.x ao calcular a perda."""
+        if config_kwargs.get("use_auxiliary_loss") is False:
+            raise ValueError("use_auxiliary_loss=False não é suportado (a perda do transformers itera sobre as "
+                             "saídas intermediárias do decodificador). Remova essa opção.")
         super().__init__()
         from transformers import Mask2FormerConfig, Mask2FormerForUniversalSegmentation, SwinConfig
         backbone = SwinConfig(embed_dim=96, depths=[2, 2, 6, 2], num_heads=[3, 6, 12, 24], window_size=7,
