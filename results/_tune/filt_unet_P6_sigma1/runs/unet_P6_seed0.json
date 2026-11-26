@@ -1,0 +1,73 @@
+{
+  "git_commit": "edc299e",
+  "git_dirty": true,
+  "tag": "filt_unet_P6_sigma1",
+  "run_id": "unet_P6_seed0",
+  "arch": "unet",
+  "pre_id": "P6",
+  "seed": 0,
+  "pre_params": {
+    "id": "P6",
+    "name": "Gaussian smoothing",
+    "stats_split": "train",
+    "sigma": 1.0
+  },
+  "train_config": {
+    "arch": "unet",
+    "pre_id": "P6",
+    "seed": 0,
+    "epochs": 10,
+    "batch_size": 16,
+    "lr": 0.003,
+    "weight_decay": 0.0001,
+    "amp": true,
+    "grad_clip": 1.0,
+    "num_workers": 2,
+    "threshold": 0.5,
+    "select_metric": "dice",
+    "patience": null,
+    "resume": true,
+    "ckpt_root": "checkpoints/_tune/filt_unet_P6_sigma1",
+    "pred_root": "predictions/_tune/filt_unet_P6_sigma1"
+  },
+  "model_config": {
+    "base": 32,
+    "depth": 4
+  },
+  "n_params": 7765057,
+  "best_epoch": 10,
+  "epochs_run": 10,
+  "early_stopping": false,
+  "best_val_dice": 0.7142985539778249,
+  "val_at_best": {
+    "iou": 0.5555710901529973,
+    "dice": 0.7142985539778249,
+    "precision": 0.710609376362161,
+    "recall": 0.7180262367359477,
+    "iou_background": 0.8874015850880668,
+    "miou": 0.721486337620532,
+    "tp": 1271590.0,
+    "fp": 517846.0,
+    "fn": 499362.0,
+    "tn": 8016738.0,
+    "n_pixels": 10305536.0
+  },
+  "train_time_s_total": 279.8307030200958,
+  "cost": {
+    "latency_ms_mean": 3.6817479799901776,
+    "latency_ms_std": 0.6678598125899715,
+    "latency_ms_median": 3.8819934998173267,
+    "batch_size": 1,
+    "device": "cuda",
+    "amp": false,
+    "peak_memory_mb": 121.3935546875
+  },
+  "preprocessing_ms_per_frame": 2.2669761499855667,
+  "n_train_frames": 4583,
+  "n_val_frames": 629,
+  "device": "cuda",
+  "gpu": "Tesla T4",
+  "torch": "2.14.1+cu130",
+  "python": "3.13.16",
+  "finished": "2026-11-26T17:03:15"
+}

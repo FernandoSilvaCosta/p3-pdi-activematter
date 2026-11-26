@@ -1,0 +1,73 @@
+{
+  "git_commit": "edc299e",
+  "git_dirty": true,
+  "tag": "filt_unet_P7_size5",
+  "run_id": "unet_P7_seed0",
+  "arch": "unet",
+  "pre_id": "P7",
+  "seed": 0,
+  "pre_params": {
+    "id": "P7",
+    "name": "Median filtering",
+    "stats_split": "train",
+    "size": 5
+  },
+  "train_config": {
+    "arch": "unet",
+    "pre_id": "P7",
+    "seed": 0,
+    "epochs": 10,
+    "batch_size": 16,
+    "lr": 0.003,
+    "weight_decay": 0.0001,
+    "amp": true,
+    "grad_clip": 1.0,
+    "num_workers": 2,
+    "threshold": 0.5,
+    "select_metric": "dice",
+    "patience": null,
+    "resume": true,
+    "ckpt_root": "checkpoints/_tune/filt_unet_P7_size5",
+    "pred_root": "predictions/_tune/filt_unet_P7_size5"
+  },
+  "model_config": {
+    "base": 32,
+    "depth": 4
+  },
+  "n_params": 7765057,
+  "best_epoch": 10,
+  "epochs_run": 10,
+  "early_stopping": false,
+  "best_val_dice": 0.7084793818897865,
+  "val_at_best": {
+    "iou": 0.5485621924692553,
+    "dice": 0.7084793818897865,
+    "precision": 0.7248976075740853,
+    "recall": 0.6927883985562567,
+    "iou_background": 0.8887862181134819,
+    "miou": 0.7186742052913686,
+    "tp": 1226895.0,
+    "fp": 465613.0,
+    "fn": 544057.0,
+    "tn": 8068971.0,
+    "n_pixels": 10305536.0
+  },
+  "train_time_s_total": 2823.8932569026947,
+  "cost": {
+    "latency_ms_mean": 4.730732460011495,
+    "latency_ms_std": 0.3241743550408973,
+    "latency_ms_median": 4.598462999638286,
+    "batch_size": 1,
+    "device": "cuda",
+    "amp": false,
+    "peak_memory_mb": 121.3935546875
+  },
+  "preprocessing_ms_per_frame": 71.21904665000329,
+  "n_train_frames": 4583,
+  "n_val_frames": 629,
+  "device": "cuda",
+  "gpu": "Tesla T4",
+  "torch": "2.14.1+cu130",
+  "python": "3.13.16",
+  "finished": "2026-11-26T18:09:51"
+}

@@ -1,19 +1,21 @@
 # Parâmetros dos pré-processamentos com filtro espacial (P6 a P10), compartilhados por TODAS as arquiteturas.
-# O run_experiment.py lê este arquivo; mudar um valor aqui muda o experimento, então altere só depois de
-# comparar na validação (tune.py filters) e commite a mudança antes de rodar os experimentos.
+# Escolhidos pelo maior Dice de validação no ajuste com a U-Net (seed 0, 10 épocas, lr 3e-3); em P10 as três
+# opções ficaram praticamente empatadas (diferença de ~0,001) e se manteve o valor padrão.
+# O run_experiment.py lê este arquivo; só altere depois de comparar na validação e commite a mudança antes
+# de rodar os experimentos.
 P6:
-  sigma: 1.0
+  sigma: 0.5          # testados 0,5 / 1,0 / 2,0  (Dice de validação 0,720 / 0,714 / 0,693)
 P7:
-  size: 3
+  size: 3             # testados 3 / 5            (0,738 / 0,709)
 P8:
   radius: 2
   sigma_spatial: 1.5
-  sigma_color: 0.5
+  sigma_color: 1.0    # testados 0,25 / 0,5 / 1,0 (0,731 / 0,675 / 0,734)
 P9:
-  n_iter: 10
+  n_iter: 5           # testados 5 / 10           (0,711 / 0,694)
   kappa: 0.5
   step: 0.2
 P10:
   wavelet: db2
   level: 2
-  thr_scale: 1.0
+  thr_scale: 1.0      # testados 0,5 / 1,0 / 2,0  (0,719 / 0,718 / 0,718): empate

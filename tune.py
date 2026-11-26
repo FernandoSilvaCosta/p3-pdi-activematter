@@ -24,7 +24,9 @@ import subprocess
 import sys
 from pathlib import Path
 
-LR_GRID = {"unet": [3e-4, 1e-3, 3e-3], "segformer": [1e-4, 2e-4, 6e-4], "mask2former": [5e-5, 1e-4, 2e-4]}
+LR_GRID = {"unet": [3e-4, 1e-3, 3e-3, 6e-3, 1e-2],
+           "segformer": [1e-4, 2e-4, 6e-4, 1.2e-3, 2e-3],
+           "mask2former": [5e-5, 1e-4, 2e-4, 4e-4]}
 FILTER_GRID = {
     "P6": [{"sigma": 0.5}, {"sigma": 1.0}, {"sigma": 2.0}],
     "P7": [{"size": 3}, {"size": 5}],
