@@ -60,11 +60,13 @@ def run_one(args, arch, pre, seed):
     runs_dir.mkdir(parents=True, exist_ok=True)
 
     arch_cfg = load_arch_config(arch, args.configs)
+    if args.model_kw:
+        arch_cfg["model"] = {**arch_cfg.get("model", {}), **json.loads(args.model_kw)}
     tc = arch_cfg.get("train", {})
     cfg = TrainConfig(
         arch=arch, pre_id=pre, seed=seed, epochs=args.epochs,
         batch_size=args.batch_size or tc.get("batch_size", 16), lr=args.lr or tc.get("lr", 1e-3),
-        weight_decay=tc.get("weight_decay", 1e-4), amp=bool(tc.get("amp", True) and not args.no_amp),
+        weight_decay=tc.get("weight_decay", 1e-4), amp=bool((tc.get("amp", True) or args.amp) and not args.no_amp),
         grad_clip=tc.get("grad_clip", 1.0), num_workers=args.num_workers, patience=args.patience,
         ckpt_root=str(args.ckpt_root), pred_root=str(args.pred_root))
 
@@ -132,9 +134,11 @@ if __name__ == "__main__":
     ap.add_argument("--epochs", type=int, default=20)
     ap.add_argument("--batch-size", type=int, default=None)
     ap.add_argument("--lr", type=float, default=None)
+    ap.add_argument("--amp", action="store_true", help="força precisão mista mesmo se a config a desligar")
     ap.add_argument("--no-amp", action="store_true")
     ap.add_argument("--patience", type=int, default=None, help="early stopping (o limite continua 20 épocas)")
     ap.add_argument("--num-workers", type=int, default=0 if os.name == "nt" else 2)
+    ap.add_argument("--model-kw", type=str, default=None, help="JSON que sobrescreve a seção model da config")
     ap.add_argument("--pre-params", type=str, default=None, help='JSON, ex.: \'{"P6": {"sigma": 1.5}}\'')
     ap.add_argument("--stats", type=Path, default=Path("data/channel_stats_train.json"))
     ap.add_argument("--processed", type=Path, default=Path("data/processed"))

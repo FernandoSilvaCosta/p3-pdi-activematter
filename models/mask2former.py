@@ -37,12 +37,14 @@ def _load_swin_imagenet(encoder, name, in_channels):
 
 class Mask2Former(nn.Module):
     def __init__(self, in_channels=10, num_queries=20, pretrained="microsoft/swin-tiny-patch4-window7-224",
-                 drop_path_rate=0.1):
+                 drop_path_rate=0.1, **config_kwargs):
+        """config_kwargs vão para o Mask2FormerConfig (ex.: decoder_layers=4, encoder_layers=2,
+        dim_feedforward=1024, use_auxiliary_loss=False, train_num_points=4096) e permitem versões mais leves."""
         super().__init__()
         from transformers import Mask2FormerConfig, Mask2FormerForUniversalSegmentation, SwinConfig
         backbone = SwinConfig(embed_dim=96, depths=[2, 2, 6, 2], num_heads=[3, 6, 12, 24], window_size=7,
                               drop_path_rate=drop_path_rate, out_features=["stage1", "stage2", "stage3", "stage4"])
-        cfg = Mask2FormerConfig(backbone_config=backbone, num_labels=1, num_queries=num_queries)
+        cfg = Mask2FormerConfig(backbone_config=backbone, num_labels=1, num_queries=num_queries, **config_kwargs)
         self.model = Mask2FormerForUniversalSegmentation(cfg)
         encoder = self.model.model.pixel_level_module.encoder
         self.loaded_fraction = None

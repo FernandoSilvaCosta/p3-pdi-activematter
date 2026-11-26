@@ -40,7 +40,8 @@ def sync(dev):
 def bench_arch(arch, args, stats, dev):
     cfg = load_arch_config(arch, args.configs)
     tc, bs = cfg.get("train", {}), args.batch_size or cfg.get("train", {}).get("batch_size", 16)
-    amp = bool(tc.get("amp", True) and dev.type == "cuda")
+    amp_cfg = {"on": True, "off": False}.get(args.amp, bool(tc.get("amp", True)))      # --amp on/off sobrescreve a config
+    amp = bool(amp_cfg and dev.type == "cuda")
     T = build_transform("P1", stats)
     train_ds = ActiveMatterSeg(args.processed, args.gt_root, "train", transform=T)
     val_ds = ActiveMatterSeg(args.processed, args.gt_root, "valid", transform=T)
@@ -49,14 +50,15 @@ def bench_arch(arch, args, stats, dev):
     vl = DataLoader(val_ds, batch_size=bs, shuffle=False, num_workers=nw)
 
     set_seed(0)
-    model = build_model(arch, in_channels=10, **cfg.get("model", {})).to(dev)
+    model_kw = {**cfg.get("model", {}), **(json.loads(args.model_kw) if args.model_kw else {})}
+    model = build_model(arch, in_channels=10, **model_kw).to(dev)
     opt = torch.optim.AdamW(model.parameters(), lr=tc.get("lr", 1e-3), weight_decay=tc.get("weight_decay", 1e-4))
     scaler = make_scaler(amp)
     if dev.type == "cuda":
         torch.cuda.reset_peak_memory_stats(dev)
 
     model.train()
-    times, it = [], iter(tl)
+    times, losses, it = [], [], iter(tl)
     for i in range(args.warmup + args.steps):
         x, y, _ = next(it)
         sync(dev)
@@ -71,9 +73,11 @@ def bench_arch(arch, args, stats, dev):
         scaler.step(opt)
         scaler.update()
         sync(dev)
+        losses.append(float(loss.detach()))
         if i >= args.warmup:
             times.append(time.perf_counter() - t0)
     s_step = float(np.mean(times))
+    loss_ok = bool(np.all(np.isfinite(losses)))
     peak = torch.cuda.max_memory_allocated(dev) / 2 ** 30 if dev.type == "cuda" else None
 
     model.eval()
@@ -95,7 +99,8 @@ def bench_arch(arch, args, stats, dev):
     return {"arch": arch, "params": count_parameters(model), "batch": bs, "amp": amp, "s_per_step": s_step,
             "steps_per_epoch": steps_epoch, "val_s_per_batch": s_val_batch, "epoch_s": epoch_s,
             "run20_min": epoch_s * 20 / 60, "ten_conditions_h": epoch_s * 20 * 10 / 3600, "peak_mem_gb": peak,
-            "n_train": len(train_ds), "n_val": len(val_ds)}
+            "n_train": len(train_ds), "n_val": len(val_ds), "loss_finite": loss_ok,
+            "loss_first": float(losses[0]), "loss_last": float(losses[-1])}
 
 
 def bench_preprocessing(args, stats):
@@ -123,6 +128,10 @@ if __name__ == "__main__":
     ap.add_argument("--val-batches", type=int, default=10)
     ap.add_argument("--pre-frames", type=int, default=20)
     ap.add_argument("--batch-size", type=int, default=None)
+    ap.add_argument("--model-kw", type=str, default=None,
+                    help='JSON que sobrescreve a seção model da config, ex.: \'{"decoder_layers": 4}\'')
+    ap.add_argument("--amp", choices=["auto", "on", "off"], default="auto",
+                    help="precisão mista (auto = valor do configs/<arq>.yaml)")
     ap.add_argument("--num-workers", type=int, default=0 if os.name == "nt" else 2)
     ap.add_argument("--stats", type=Path, default=Path("data/channel_stats_train.json"))
     ap.add_argument("--processed", type=Path, default=Path("data/processed"))
@@ -142,7 +151,8 @@ if __name__ == "__main__":
         mem = f"{r['peak_mem_gb']:.1f} GB" if r["peak_mem_gb"] is not None else "n/d"
         print(f"{arch:12s} | {r['params'] / 1e6:6.1f} M param | lote {r['batch']:>2d} | {r['s_per_step']:.3f} s/passo "
               f"| época ~ {r['epoch_s'] / 60:5.1f} min | 20 épocas ~ {r['run20_min']:5.1f} min | "
-              f"10 condições ~ {r['ten_conditions_h']:4.1f} h | pico de memória {mem}")
+              f"10 condições ~ {r['ten_conditions_h']:4.1f} h | pico de memória {mem} | AMP: {'sim' if r['amp'] else 'não'}"
+              f" | perda {r['loss_first']:.3f} -> {r['loss_last']:.3f}" + ("" if r["loss_finite"] else "  [ATENÇÃO: perda não finita]"))
 
     pre = bench_preprocessing(a, stats)
     print("\nPré-processamento por quadro (CPU, 1 processo):")
