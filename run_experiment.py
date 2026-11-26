@@ -20,6 +20,7 @@ Exemplos:
     python run_experiment.py --status                                    # quadro das execuções feitas/pendentes
 """
 import argparse
+import hashlib
 import json
 import os
 import platform
@@ -33,7 +34,7 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 
-from data_loader import ActiveMatterSeg
+from data_loader import ActiveMatterSeg, build_cache
 from metrics import count_parameters, measure_inference_cost
 from models import ARCHS, build_model, load_arch_config
 from preprocessing import PRE_IDS, build_transform, load_stats
@@ -59,6 +60,15 @@ def load_pre_params(configs_dir, pre):
         return None
     import yaml
     return (yaml.safe_load(path.read_text(encoding="utf-8")) or {}).get(pre)
+
+
+CACHE_PRES = {"P6", "P7", "P8", "P9", "P10"}              # filtros espaciais: caros e determinísticos
+
+
+def cache_key(pre, params, stats, split, n_frames, max_files):
+    blob = json.dumps({"pre": pre, "params": params, "stats": stats, "split": split, "n": n_frames,
+                       "max_files": max_files}, sort_keys=True, default=str)
+    return hashlib.sha1(blob.encode("utf-8")).hexdigest()[:12]
 
 
 def time_preprocessing(ds, n=20):
@@ -95,7 +105,20 @@ def run_one(args, arch, pre, seed):
     cli_params = json.loads(args.pre_params).get(pre) if args.pre_params else None
     pre_params = {**(load_pre_params(args.configs, pre) or {}), **(cli_params or {})} or None
     T = build_transform(pre, stats, pre_params)
-    mk = lambda split: ActiveMatterSeg(args.processed, args.gt_root, split, transform=T, max_files=args.max_files)
+    use_cache = args.cache == "on" or (args.cache == "auto" and pre in CACHE_PRES)
+
+    def mk(split):
+        ds = ActiveMatterSeg(args.processed, args.gt_root, split, transform=T, max_files=args.max_files)
+        if use_cache:
+            key = cache_key(pre, T.params, stats, split, len(ds), args.max_files)
+            path = args.cache_dir / f"{pre}_{key}" / f"{split}.npy"
+            t_c = time.time()
+            existed = path.exists()
+            build_cache(ds, path, num_workers=args.num_workers)
+            ds.use_cache(path)
+            print(f"[cache] {split}: {'reutilizado' if existed else 'gerado'} em {time.time() - t_c:.0f}s ({path})")
+        return ds
+
     train_ds, val_ds = mk("train"), mk("valid")
     train_loader = DataLoader(train_ds, batch_size=cfg.batch_size, shuffle=True, num_workers=cfg.num_workers,
                               pin_memory=torch.cuda.is_available())
@@ -175,6 +198,9 @@ if __name__ == "__main__":
     ap.add_argument("--pred-root", type=Path, default=Path("predictions"))
     ap.add_argument("--max-files", type=int, default=None, help="usa só os N primeiros arquivos de cada split (teste)")
     ap.add_argument("--no-test-pred", action="store_true")
+    ap.add_argument("--cache", choices=["auto", "on", "off"], default="auto",
+                    help="pré-calcula as entradas dos filtros P6-P10 uma vez (auto = só P6-P10)")
+    ap.add_argument("--cache-dir", type=Path, default=Path("data/cache"))
     ap.add_argument("--keep-last", action="store_true", help="não apagar last.pt ao concluir a execução")
     ap.add_argument("--force", action="store_true")
     ap.add_argument("--tag", type=str, default=None,

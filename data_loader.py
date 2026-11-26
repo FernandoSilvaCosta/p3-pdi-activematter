@@ -24,6 +24,7 @@ As estatísticas que valem para o projeto são as do split 'train' (--split trai
 """
 import argparse
 import json
+import os
 from pathlib import Path
 
 import h5py
@@ -42,6 +43,7 @@ class ActiveMatterSeg(Dataset):
         complementar de referência (Alternativa A). O experimento principal usa False.
         """
         self._hp, self._hg = {}, {}          # handles abertos por processo/worker (definidos primeiro: __del__ seguro)
+        self._cache_path, self._cache_arr = None, None      # cache opcional de entradas já pré-processadas
         self.split = split
         self.proc_dir = Path(processed_root) / split
         self.gt_dir = Path(gt_root) / split
@@ -95,13 +97,28 @@ class ActiveMatterSeg(Dataset):
             x = np.concatenate([x, (p["concentration"][n, ti] - 1.0)[None]], axis=0)
         return x.astype(np.float32, copy=False)
 
+    def use_cache(self, path):
+        """Passa a ler as entradas (já pré-processadas) de um .npy criado por build_cache; ignora o transform."""
+        self._cache_path, self._cache_arr = str(path), None
+
+    def __getstate__(self):
+        """Handles de arquivo e memmap não são copiados para os processos de leitura."""
+        d = self.__dict__.copy()
+        d["_hp"], d["_hg"], d["_cache_arr"] = {}, {}, None
+        return d
+
     def __getitem__(self, i):
         fi, n, ti = self.index[i]
         _, g = self._handles(fi)
-        x = self.read_fields(fi, n, ti)
         y = g["mask"][n, ti].astype(np.float32)[None]
-        if self.transform is not None:
-            x = self.transform(x)
+        if self._cache_path is not None:
+            if self._cache_arr is None:
+                self._cache_arr = np.load(self._cache_path, mmap_mode="r")
+            x = np.asarray(self._cache_arr[i], dtype=np.float32)
+        else:
+            x = self.read_fields(fi, n, ti)
+            if self.transform is not None:
+                x = self.transform(x)
         x = torch.as_tensor(np.asarray(x), dtype=torch.float32)
         meta = {"file": self.files[fi].name, "traj": n, "t": int(self.time_index[fi][ti]),
                 "sigma": self.sigmas[i], "idx": i}
@@ -130,6 +147,33 @@ def make_loader(processed_root, gt_root, split, batch_size=16, shuffle=None, num
         shuffle = (split == "train")
     return DataLoader(ds, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers,
                       pin_memory=torch.cuda.is_available())
+
+
+def build_cache(ds, path, batch_size=64, num_workers=2, dtype="float16"):
+    """
+    Aplica o transform a TODOS os quadros de ds e grava o resultado em <path> (.npy, ordem de ds.index).
+    Serve para pré-processamentos determinísticos e caros (filtros): calcula-se uma vez e as épocas só leem.
+    O cache é gravado em float16 (metade do espaço; erro relativo ~1e-3, desprezível para a entrada da rede).
+    Se o arquivo já existe, não refaz. Retorna o caminho.
+    """
+    path = Path(path)
+    if path.exists():
+        return path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.stem + ".tmp.npy")
+    x0 = np.asarray(ds[0][0])
+    arr = np.lib.format.open_memmap(tmp, mode="w+", dtype=dtype, shape=(len(ds),) + tuple(x0.shape))
+    loader = DataLoader(ds, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+    i = 0
+    for x, _, _ in loader:
+        x = np.asarray(x)
+        arr[i:i + x.shape[0]] = x.astype(dtype)
+        i += x.shape[0]
+    assert i == len(ds), f"cache incompleto: {i} de {len(ds)} quadros"
+    arr.flush()
+    del arr
+    os.replace(tmp, path)
+    return path
 
 
 def compute_channel_stats(ds, pixel_stride=16, seed=0):

@@ -17,3 +17,9 @@ data/channel_stats_valid.json
 *.tar
 checkpoints/_tune/
 predictions/_tune/
+data/cache/
+checkpoints/_tune/
+
+
+
+

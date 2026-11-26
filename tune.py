@@ -69,17 +69,45 @@ def command(job, args):
     return cmd
 
 
-def summary(results):
+def _find(root, pattern):
+    """Arquivos que casam com o padrão em qualquer nível abaixo de root e cujo caminho passa por uma pasta _tune."""
+    root = Path(root)
+    if not root.exists():
+        return []
+    return sorted(f for f in root.rglob(pattern) if "_tune" in f.parts)
+
+
+def collect_rows(results, ckpt_root):
+    """Lê os registros finais (.../_tune/<tag>/runs/*.json); se não houver, o train_summary.json dos checkpoints."""
     rows = []
-    for f in sorted(Path(results, "_tune").glob("*/runs/*_seed*.json")):
+    for f in _find(results, "*_seed*.json"):
+        if f.parent.name != "runs":
+            continue
         r = json.loads(f.read_text(encoding="utf-8"))
         v = r["val_at_best"]
         pp = {k: x for k, x in r["pre_params"].items() if k not in ("id", "name", "stats_split")}
         rows.append((r["arch"], r["pre_id"], r["tag"], r["train_config"]["lr"], pp,
                      r["train_config"]["epochs"], r["best_epoch"], v["dice"], v["iou"]))
+    if rows:
+        return rows, f"registros finais sob {Path(results).resolve()}"
+    for f in _find(ckpt_root, "train_summary.json"):
+        r = json.loads(f.read_text(encoding="utf-8"))
+        v = r["val_at_best"]
+        idx = max(i for i, part in enumerate(f.parts) if part == "_tune")
+        rows.append((r["arch"], r["pre_id"], f.parts[idx + 1], r["cfg"]["lr"], {}, r["epochs_max"],
+                     r["best_epoch"], v["dice"], v["iou"]))
+    return rows, f"train_summary.json sob {Path(ckpt_root).resolve()} (registros finais não encontrados)"
+
+
+def summary(results, ckpt_root="checkpoints"):
+    rows, origem = collect_rows(results, ckpt_root)
     if not rows:
-        print("Nenhuma execução de ajuste encontrada em", Path(results, "_tune"))
+        print(f"Nenhuma execução de ajuste encontrada.\n  Procurei em: {Path(results).resolve()}\n"
+              f"  e em:        {Path(ckpt_root).resolve()}\n"
+              "Dicas: use --results com a pasta que CONTÉM o _tune (ex.: .../results), no Drive se o ajuste gravou lá;\n"
+              "se a sessão do Colab reiniciou, a pasta local foi apagada e o ajuste precisa ser repetido.")
         return
+    print(f"Fonte: {origem}\n")
     rows.sort(key=lambda x: (x[0], x[1], -x[7]))
     print(f"{'arq':12s} {'pré':4s} {'lr':>8s} {'épocas':>6s} {'melhor':>6s} {'Dice val':>9s} {'IoU val':>8s}  parâmetros do filtro / tag")
     prev = None
@@ -108,7 +136,7 @@ if __name__ == "__main__":
     a = ap.parse_args()
 
     if a.mode == "summary":
-        summary(a.results or "results")
+        summary(a.results or "results", a.ckpt_root or "checkpoints")
     else:
         todo = jobs(a.mode, a.arch, a.pre)
         print(f"{len(todo)} configurações ({a.mode}), {a.epochs} épocas cada\n")
@@ -121,4 +149,4 @@ if __name__ == "__main__":
             subprocess.run(cmd, check=False)
         if not a.dry_run:
             print("\n=== Resumo ===")
-            summary(a.results or "results")
+            summary(a.results or "results", a.ckpt_root or "checkpoints")
