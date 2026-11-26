@@ -40,6 +40,27 @@ from preprocessing import PRE_IDS, build_transform, load_stats
 from training import TrainConfig, load_best, predict_split, prediction_dir, run_dir, set_seed, train
 
 
+def git_info():
+    """(hash curto do commit, árvore modificada?) para registrar com qual código a execução rodou."""
+    import subprocess
+    try:
+        h = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], stderr=subprocess.DEVNULL, text=True).strip()
+        d = bool(subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=no"],
+                                         stderr=subprocess.DEVNULL, text=True).strip())
+        return h, d
+    except Exception:
+        return None, None
+
+
+def load_pre_params(configs_dir, pre):
+    """Parâmetros dos filtros versionados em configs/preprocessing.yaml (iguais para todas as arquiteturas)."""
+    path = Path(configs_dir) / "preprocessing.yaml"
+    if not path.exists():
+        return None
+    import yaml
+    return (yaml.safe_load(path.read_text(encoding="utf-8")) or {}).get(pre)
+
+
 def time_preprocessing(ds, n=20):
     """Tempo médio (ms) do pré-processamento por quadro, em CPU, sobre n quadros espalhados pelo dataset."""
     idx = np.linspace(0, len(ds.index) - 1, n).astype(int)
@@ -71,7 +92,8 @@ def run_one(args, arch, pre, seed):
         ckpt_root=str(args.ckpt_root), pred_root=str(args.pred_root))
 
     stats = load_stats(args.stats)
-    pre_params = json.loads(args.pre_params).get(pre) if args.pre_params else None
+    cli_params = json.loads(args.pre_params).get(pre) if args.pre_params else None
+    pre_params = {**(load_pre_params(args.configs, pre) or {}), **(cli_params or {})} or None
     T = build_transform(pre, stats, pre_params)
     mk = lambda split: ActiveMatterSeg(args.processed, args.gt_root, split, transform=T, max_files=args.max_files)
     train_ds, val_ds = mk("train"), mk("valid")
@@ -94,7 +116,9 @@ def run_one(args, arch, pre, seed):
         predict_split(model, mk("test"), prediction_dir(cfg), batch_size=32, amp=cfg.amp, attrs=attrs)
 
     cost = measure_inference_cost(model, input_shape=(1, 10, 128, 128), device="cuda", amp=False)
+    commit, dirty = git_info()
     record = {
+        "git_commit": commit, "git_dirty": dirty, "tag": args.tag,
         "run_id": run_id, "arch": arch, "pre_id": pre, "seed": seed, "pre_params": T.params,
         "train_config": asdict(cfg), "model_config": arch_cfg.get("model", {}),
         "n_params": count_parameters(model), "best_epoch": summary["best_epoch"],
@@ -109,6 +133,8 @@ def run_one(args, arch, pre, seed):
     }
     shutil.copy(run_dir(cfg) / "history.csv", runs_dir / f"{run_id}_history.csv")
     rec_path.write_text(json.dumps(record, indent=2, default=str), encoding="utf-8")        # marca de conclusão
+    if not args.keep_last:                                    # last.pt (com o otimizador) só serve para retomar
+        (run_dir(cfg) / "last.pt").unlink(missing_ok=True)
     print(f"[{run_id}] concluída: melhor época {record['best_epoch']}, "
           f"Dice de validação {summary['val_at_best']['dice']:.4f}, IoU {summary['val_at_best']['iou']:.4f} | "
           f"latência {cost['latency_ms_mean']:.1f} ms/quadro | registro em {rec_path}")
@@ -149,7 +175,10 @@ if __name__ == "__main__":
     ap.add_argument("--pred-root", type=Path, default=Path("predictions"))
     ap.add_argument("--max-files", type=int, default=None, help="usa só os N primeiros arquivos de cada split (teste)")
     ap.add_argument("--no-test-pred", action="store_true")
+    ap.add_argument("--keep-last", action="store_true", help="não apagar last.pt ao concluir a execução")
     ap.add_argument("--force", action="store_true")
+    ap.add_argument("--tag", type=str, default=None,
+                    help="execução de ajuste (hiperparâmetros): grava em results/_tune/<tag>, sem predições de teste")
     ap.add_argument("--smoke", action="store_true", help="teste rápido: 1 época, 3 arquivos, saídas em pastas _smoke")
     ap.add_argument("--status", action="store_true")
     a = ap.parse_args()
@@ -157,6 +186,10 @@ if __name__ == "__main__":
     if a.smoke:
         a.epochs, a.max_files = 1, 3
         a.results, a.ckpt_root, a.pred_root = Path("results/_smoke"), Path("checkpoints/_smoke"), Path("predictions/_smoke")
+    if a.tag:
+        a.results, a.ckpt_root, a.pred_root = (a.results / "_tune" / a.tag, a.ckpt_root / "_tune" / a.tag,
+                                               a.pred_root / "_tune" / a.tag)
+        a.no_test_pred = True
     if a.status:
         print_status(a)
     else:
