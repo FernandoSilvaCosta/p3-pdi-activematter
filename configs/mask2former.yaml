@@ -9,7 +9,7 @@ model:
   drop_path_rate: 0.1
   decoder_layers: 4
 train:
-  lr: 1.0e-4
+  lr: 2.0e-04
   batch_size: 16
   weight_decay: 1.0e-4
   amp: true

@@ -3,7 +3,7 @@ arch: segformer
 model:
   pretrained: nvidia/mit-b0
 train:
-  lr: 2.0e-4
+  lr: 6.0e-04
   batch_size: 16
   weight_decay: 1.0e-4
   amp: true
