@@ -15,3 +15,5 @@ __pycache__/
 .venv/
 data/channel_stats_valid.json
 *.tar
+checkpoints/_tune/
+predictions/_tune/
