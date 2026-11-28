@@ -1,0 +1,72 @@
+{
+  "git_commit": "fb43f6d",
+  "git_dirty": true,
+  "tag": null,
+  "run_id": "unet_P2_seed0",
+  "arch": "unet",
+  "pre_id": "P2",
+  "seed": 0,
+  "pre_params": {
+    "id": "P2",
+    "name": "RMS",
+    "stats_split": "train"
+  },
+  "train_config": {
+    "arch": "unet",
+    "pre_id": "P2",
+    "seed": 0,
+    "epochs": 20,
+    "batch_size": 16,
+    "lr": 0.003,
+    "weight_decay": 0.0001,
+    "amp": true,
+    "grad_clip": 1.0,
+    "num_workers": 2,
+    "threshold": 0.5,
+    "select_metric": "dice",
+    "patience": null,
+    "resume": true,
+    "ckpt_root": "/content/drive/MyDrive/pdi-activematter/checkpoints",
+    "pred_root": "/content/drive/MyDrive/pdi-activematter/predictions"
+  },
+  "model_config": {
+    "base": 32,
+    "depth": 4
+  },
+  "n_params": 7765057,
+  "best_epoch": 19,
+  "epochs_run": 20,
+  "early_stopping": false,
+  "best_val_dice": 0.7635174579565934,
+  "val_at_best": {
+    "iou": 0.6174914986626558,
+    "dice": 0.7635174579565934,
+    "precision": 0.7823830543205356,
+    "recall": 0.7455402517967737,
+    "iou_background": 0.90897529498443,
+    "miou": 0.763233396823543,
+    "tp": 1320316.0,
+    "fp": 367241.0,
+    "fn": 450636.0,
+    "tn": 8167343.0,
+    "n_pixels": 10305536.0
+  },
+  "train_time_s_total": 413.00064969062805,
+  "cost": {
+    "latency_ms_mean": 5.417014659951747,
+    "latency_ms_std": 2.767346964593783,
+    "latency_ms_median": 4.605013499940469,
+    "batch_size": 1,
+    "device": "cuda",
+    "amp": false,
+    "peak_memory_mb": 121.3935546875
+  },
+  "preprocessing_ms_per_frame": 0.08459475000108796,
+  "n_train_frames": 4583,
+  "n_val_frames": 629,
+  "device": "cuda",
+  "gpu": "Tesla T4",
+  "torch": "2.14.1+cu130",
+  "python": "3.13.16",
+  "finished": "2026-11-27T01:34:37"
+}
